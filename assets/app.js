@@ -16,6 +16,8 @@ var Engine = Matter.Engine,
     World = Matter.World,
     Bodies = Matter.Bodies;
 
+var ballsDeleted = 0;
+
 var engine = Engine.create(),
     world = engine.world;
 
@@ -25,7 +27,7 @@ var render = Render.create({
         // width: canvasWidth,
         // height: 300,
         wireframes: false,
-        background: '#fff'
+        background: 'none'
     },
 		engine: engine
 		});
@@ -137,8 +139,17 @@ function makeHexagon() {
 makeHexagon();
 
 var createBalls = setInterval(function(){
-  var clickBall = ball(3,6,Matter.Common.random(2,8),15);
-    World.add(engine.world, clickBall);
+  // engine.enabled = false
+  if (Matter.Composite.allBodies(engine.world).length > 90) {
+    // pause
+    Render.stop(render);
+    // show message "you're not even trying! Delete a few balls to proceed"
+  } else {
+    // resume
+    Render.run(render);
+    var clickBall = ball(3,6,Matter.Common.random(2,8),15);
+      World.add(engine.world, clickBall);
+  }
 }, 500);
 
 
@@ -147,6 +158,9 @@ $('#ebi-oops').on('click', function () {
 
     var selected = Matter.Query.point(Matter.Composite.allBodies(engine.world),{x:mouse.position.x,y:mouse.position.y});
     Matter.World.remove(engine.world, [selected[0]]);
+
+    ballsDeleted++;
+    console.log(ballsDeleted);
     // $(clickBall).on(_engine, 'mousedown', function(event) {
     //   console.log('test');
     // });
