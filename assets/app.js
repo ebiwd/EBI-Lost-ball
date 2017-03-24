@@ -18,6 +18,13 @@ var Engine = Matter.Engine,
 
 var ballsDeleted = 0;
 
+// https://github.com/liabru/matter-js/blob/master/examples/collisionFiltering.js
+// define our categories (as bit fields, there are up to 32 available)
+var mainCategory = 0x0001,
+    redCategory = 0x0002,
+    greenCategory = 0x0004,
+    orangeCategory = 0x0008;
+
 var engine = Engine.create(),
     world = engine.world;
 
@@ -121,6 +128,11 @@ function makeHexagon() {
           Constraint.create({
             bodyA: newBall,
             pointB: { x: calcBallX(activeColumn,circleSize,circleGap), y: calcBallY(activeRow,circleSize,circleGap,activeColumn) },
+            collisionFilter: {
+              category: greenCategory,
+              // mask: orangeCategory
+              // mask: orangeCategory
+            },
             render: {
               //  fillStyle: fillColor
                strokeStyle: 'none',
@@ -140,28 +152,33 @@ makeHexagon();
 
 
 
-$('#ebi-oops').on('click', function () {
-// console.log(mouse.position.x,mouse.position.y);
-
-    var selected = Matter.Query.point(Matter.Composite.allBodies(engine.world),{x:mouse.position.x,y:mouse.position.y});
-    Matter.World.remove(engine.world, [selected[0]]);
-
-    ballsDeleted++;
-    $('.invaision-count .score').html(ballsDeleted);
-
-    console.log(ballsDeleted);
-    // $(clickBall).on(_engine, 'mousedown', function(event) {
-    //   console.log('test');
-    // });
-})
+// $('#ebi-oops').on('click', function () {
+// // console.log(mouse.position.x,mouse.position.y);
+//
+//     var selected = Matter.Query.point(Matter.Composite.allBodies(engine.world),{x:mouse.position.x,y:mouse.position.y});
+//     Matter.World.remove(engine.world, [selected[0]]);
+//
+//     ballsDeleted++;
+//     $('.ball-count .score').html(ballsDeleted);
+//
+//     console.log(ballsDeleted);
+//     // $(clickBall).on(_engine, 'mousedown', function(event) {
+//     //   console.log('test');
+//     // });
+// })
 
 
 
 // var ball = Bodies.circle(100, 150, 20, { render: { lineWidth: 1e-6, fillStyle: '#fA2'}, inertia: Infinity, restitution: 1, friction: 0, frictionAir: 0, frictionStatic: 0});
-
-var ground = Bodies.rectangle(0, 410, 1710, 10, { render: { lineWidth: 1e-6, fillStyle: '#fff'}, isStatic: true});
-var left = Bodies.rectangle(0, 0, 20, 800, { render: { lineWidth: 1e-6, fillStyle: '#fff'}, isStatic: true});
-var right = Bodies.rectangle(800, 0, 20, 800, { render: { lineWidth: 1e-6, fillStyle: '#fff'}, isStatic: true});
+var ground = Bodies.rectangle(0, 410, 1710, 10, {
+  collisionFilter: { category: mainCategory },
+  render: { lineWidth: 1e-6, fillStyle: '#fff'}, isStatic: true});
+var left = Bodies.rectangle(0, 0, 20, 800, {
+  collisionFilter: { category: mainCategory },
+  render: { lineWidth: 1e-6, fillStyle: '#fff'}, isStatic: true});
+var right = Bodies.rectangle(800, 0, 20, 800, {
+  collisionFilter: { category: mainCategory },
+  render: { lineWidth: 1e-6, fillStyle: '#fff'}, isStatic: true});
 
 // add mouse control
 var mouse = Mouse.create(render.canvas),
@@ -177,61 +194,88 @@ var mouse = Mouse.create(render.canvas),
 
 World.add(world, mouseConstraint);
 
+// green category objects should not be draggable with the mouse
+// mouseConstraint.collisionFilter.mask = greenCategory;
+
 // keep the mouse in sync with rendering
 render.mouse = mouse;
 
 World.add(world, [ground,left,right]);
 
 
+// begin invasion
+var createBalls = setInterval(function(){
+  // engine.enabled = false
+  var allBodies = Matter.Composite.allBodies(engine.world);
+
+  for (var i = 0; i < allBodies.length; i++) {
+    // console.log();
+
+    if (allBodies[i].bounds['max']['x'] < 0 || allBodies[i].bounds['max']['y'] < 0) {
+      // var selected = Matter.Query.point(Matter.Composite.allBodies(engine.world),{x:mouse.position.x,y:mouse.position.y});
+      Matter.World.remove(engine.world, [allBodies[i]]);
+
+      ballsDeleted++;
+      $('.ball-count .score').html(ballsDeleted);
+
+    }
+
+  }
+
+  if (Matter.Composite.allBodies(engine.world).length > 90) {
+    // pause
+    Render.stop(render);
+    // show message "you're not even trying! Delete a few balls to proceed"
+  } else {
+    // resume
+    Render.run(render);
+
+    var activeRow = Matter.Common.random(5,7),
+        activeColumn = Matter.Common.random(2,4),
+        circleGap = 5,
+        circleSize = 15;
+    var x = calcBallX(activeColumn,circleSize,circleGap);
+    var y = calcBallY(activeRow,circleSize,circleGap,activeColumn);
+
+    var clickBall = Bodies.circle(x, y, 10, {
+      inertia: Infinity,
+      frictionStatic: 0,
+      density: 0.0001,
+      angle: 180,
+      inertia: 1000,
+      frictionAir: 0,
+      restitution: 1,
+      friction: 0,
+      // collisionFilter: { category: mainCategory },
+      collisionFilter: {
+        category: orangeCategory
+        // mask: orangeCategory
+        // mask: mainCategory | greenCategory
+      },
+      render: {
+         fillStyle: 'orange'
+        //  strokeStyle: 'blue',
+        //  lineWidth: 3
+      }
+    });
+
+    World.add(engine.world, clickBall);
+  }
+}, 500);
+
+
+// Start
+// run the engine
+Engine.run(engine);
+
 // run the renderer
 Render.run(render);
 
+$('.ball-count').show();
+
 $('.begin-invasion').on('click', function() {
-  $('.begin-invasion').hide();
-  $('.invaision-count').show();
-  $('.directions').show();
-
-  // run the engine
-  Engine.run(engine);
-
-  // begin invasion
-  var createBalls = setInterval(function(){
-    // engine.enabled = false
-    if (Matter.Composite.allBodies(engine.world).length > 90) {
-      // pause
-      Render.stop(render);
-      // show message "you're not even trying! Delete a few balls to proceed"
-    } else {
-      // resume
-      Render.run(render);
-      // var clickBall = ball(3,6,Matter.Common.random(2,8),15);
 
 
-      var activeRow = Matter.Common.random(5,7),
-          activeColumn = Matter.Common.random(2,4),
-          circleGap = 5,
-          circleSize = 15;
-      var x = calcBallX(activeColumn,circleSize,circleGap);
-      var y = calcBallY(activeRow,circleSize,circleGap,activeColumn);
 
-
-      var clickBall = Bodies.circle(x, y, 10, {
-          density: 0.0005,
-          angle: 180,
-          inertia: 1000,
-          // frictionAir: 0.06,
-          restitution: 0.6,
-          friction: 0.1,
-          render: {
-             fillStyle: 'orange'
-            //  strokeStyle: 'blue',
-            //  lineWidth: 3
-          }
-      });
-
-
-      World.add(engine.world, clickBall);
-    }
-  }, 500);
 
 })
