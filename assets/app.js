@@ -138,19 +138,6 @@ function makeHexagon() {
 
 makeHexagon();
 
-var createBalls = setInterval(function(){
-  // engine.enabled = false
-  if (Matter.Composite.allBodies(engine.world).length > 90) {
-    // pause
-    Render.stop(render);
-    // show message "you're not even trying! Delete a few balls to proceed"
-  } else {
-    // resume
-    Render.run(render);
-    var clickBall = ball(3,6,Matter.Common.random(2,8),15);
-      World.add(engine.world, clickBall);
-  }
-}, 500);
 
 
 $('#ebi-oops').on('click', function () {
@@ -160,6 +147,8 @@ $('#ebi-oops').on('click', function () {
     Matter.World.remove(engine.world, [selected[0]]);
 
     ballsDeleted++;
+    $('.invaision-count .score').html(ballsDeleted);
+
     console.log(ballsDeleted);
     // $(clickBall).on(_engine, 'mousedown', function(event) {
     //   console.log('test');
@@ -193,8 +182,56 @@ render.mouse = mouse;
 
 World.add(world, [ground,left,right]);
 
-// run the engine
-Engine.run(engine);
 
 // run the renderer
 Render.run(render);
+
+$('.begin-invasion').on('click', function() {
+  $('.begin-invasion').hide();
+  $('.invaision-count').show();
+  $('.directions').show();
+
+  // run the engine
+  Engine.run(engine);
+
+  // begin invasion
+  var createBalls = setInterval(function(){
+    // engine.enabled = false
+    if (Matter.Composite.allBodies(engine.world).length > 90) {
+      // pause
+      Render.stop(render);
+      // show message "you're not even trying! Delete a few balls to proceed"
+    } else {
+      // resume
+      Render.run(render);
+      // var clickBall = ball(3,6,Matter.Common.random(2,8),15);
+
+
+      var activeRow = Matter.Common.random(5,7),
+          activeColumn = Matter.Common.random(2,4),
+          circleGap = 5,
+          circleSize = 15;
+      var x = calcBallX(activeColumn,circleSize,circleGap);
+      var y = calcBallY(activeRow,circleSize,circleGap,activeColumn);
+
+
+      var clickBall = Bodies.circle(x, y, 10, {
+          density: 0.0005,
+          angle: 180,
+          inertia: 1000,
+          // frictionAir: 0.06,
+          restitution: 0.6,
+          friction: 0.1,
+          render: {
+             fillStyle: 'orange'
+            //  strokeStyle: 'blue',
+            //  lineWidth: 3
+          }
+      });
+
+
+      World.add(engine.world, clickBall);
+    }
+  }, 500);
+
+})
