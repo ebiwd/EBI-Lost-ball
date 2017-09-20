@@ -1,6 +1,7 @@
 // var logo = project.importSVG(document.getElementById('ebi-svg'));
 //
-var canvasWidth = document.getElementById('ebi-oops').width;
+var canvasWidth = $('#intro-text').width();
+// canvasWidth =1000;
 //
 //
 // logo.position = new Point(canvasWidth / 2 - 100, 200);
@@ -38,8 +39,8 @@ var engine = Engine.create(),
 var render = Render.create({
 		element: document.getElementById('ebi-oops'),
     options: {
-        // width: canvasWidth,
-        // height: 300,
+        width: canvasWidth,
+        height: 500,
         wireframes: false,
         background: 'none'
     },
@@ -52,7 +53,7 @@ var render = Render.create({
 
 function isEven(num) { return ((num % 2) === 1) ? 0 : 15 }
 function calcBallX(activeColumn,circleSize,circleGap) {
-  return activeColumn * (circleSize + circleGap) * 2;
+  return (canvasWidth*.25) + (activeColumn * (circleSize + circleGap) * 2);
 }
 function calcBallY(activeRow,circleSize,circleGap,activeColumn) {
   return (activeRow * (circleSize + circleGap+2) * 2) + isEven(activeColumn);
@@ -190,12 +191,12 @@ var groundColor = '#fff';
 var ground = Bodies.rectangle(0, 410, 1710, 10, {
   collisionFilter: { category: mainCategory },
   render: { lineWidth: 1e-6, fillStyle: groundColor}, isStatic: true});
-var left = Bodies.rectangle(0, 0, 20, 800, {
-  collisionFilter: { category: mainCategory },
-  render: { lineWidth: 1e-6, fillStyle: groundColor}, isStatic: true});
-var right = Bodies.rectangle(800, 0, 20, 800, {
-  collisionFilter: { category: mainCategory },
-  render: { lineWidth: 1e-6, fillStyle: groundColor}, isStatic: true});
+// var left = Bodies.rectangle(0, 0, 20, 800, {
+//   collisionFilter: { category: mainCategory },
+//   render: { lineWidth: 1e-6, fillStyle: groundColor}, isStatic: true});
+// var right = Bodies.rectangle(800, 0, 20, 800, {
+//   collisionFilter: { category: mainCategory },
+//   render: { lineWidth: 1e-6, fillStyle: groundColor}, isStatic: true});
 
 // add mouse control
 var mouse = Mouse.create(render.canvas),
@@ -218,7 +219,7 @@ mouseConstraint.collisionFilter.category = mainCategory;
 // keep the mouse in sync with rendering
 render.mouse = mouse;
 
-World.add(world, [ground,left,right]);
+World.add(world, [ground]);
 
 
 Events.on(engine, 'beforeTick', function() {
@@ -237,7 +238,7 @@ Events.on(engine, 'beforeTick', function() {
     // console.log(allBodies[i]);
 
     // remove out of bounds balls
-    if (allBodies[i].bounds['max']['x'] < 0 || allBodies[i].bounds['max']['y'] < 0) {
+    if (allBodies[i].bounds['max']['x'] < 0 || allBodies[i].bounds['max']['y'] < 0 || allBodies[i].bounds['max']['y'] > 300 ||  allBodies[i].bounds['max']['x'] < canvasWidth) {
       // var selected = Matter.Query.point(Matter.Composite.allBodies(engine.world),{x:mouse.position.x,y:mouse.position.y});
       Matter.World.remove(engine.world, [allBodies[i]]);
 
